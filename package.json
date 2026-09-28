@@ -2,6 +2,7 @@
   "name": "tadabbur-monorepo",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*",
@@ -13,7 +14,8 @@
     "dev:cms": "npm run dev --workspace=@tadabbur/cms",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "perf-check": "node tools/perf-check.js"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

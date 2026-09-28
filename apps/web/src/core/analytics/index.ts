@@ -17,6 +17,8 @@ export interface AnalyticsEventMap {
   pwa_installed: { platform: string };
   consent_given: { granted: boolean };
   font_scale_changed: { font_scale: number };
+  perf_app_ready_ms: { duration_ms: number };
+  perf_panel_open_ms: { duration_ms: number };
 }
 
 export interface Analytics {

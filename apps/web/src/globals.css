@@ -26,6 +26,27 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+/* Strictly enforce letter-spacing: normal on Arabic text to prevent breaking letter joining */
+[lang="ar"], .font-arabic {
+  letter-spacing: normal !important;
+}
+
+/* WCAG 2.2 AA Focus Visible Outlines */
+:focus-visible {
+  outline: 2px solid #065f46 !important;
+  outline-offset: 2px !important;
+}
+
+/* Accessibility: prefers-reduced-motion media query support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @utility text-balance {
   text-wrap: balance;
 }

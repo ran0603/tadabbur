@@ -1,0 +1,16 @@
+{
+  "appId": "org.tadabbur.app",
+  "appName": "Tadabbur",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "hostname": "app.tadabbur.org"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#022c22"
+    }
+  }
+}
