@@ -14,6 +14,7 @@ export interface AnalyticsEventMap {
   audio_played: { verse_ref: string; reciter_id: string };
   pwa_installed: { platform: string };
   consent_given: { granted: boolean };
+  font_scale_changed: { font_scale: number };
 }
 
 export interface Analytics {

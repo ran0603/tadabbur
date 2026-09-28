@@ -6,6 +6,8 @@ import { OrientationCard } from '../orientation/OrientationCard';
 import { MacroOrientationView } from '../orientation/MacroOrientationView';
 import { OpeningClosingLinkModule } from '../orientation/OpeningClosingLinkModule';
 import { RoadmapDrawer } from '../roadmap/RoadmapDrawer';
+import { typographyService, TypographySettings } from '../settings/typographySettings';
+import { TypographyControlsModal } from '../settings/TypographyControlsModal';
 
 interface Props {
   surahId: number;
@@ -28,6 +30,8 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const [showOrientation, setShowOrientation] = useState(true);
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const [showTypographyModal, setShowTypographyModal] = useState(false);
+  const [typography, setTypography] = useState<TypographySettings>(() => typographyService.getSettings());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -101,6 +105,8 @@ export function ReaderScreen({ surahId, onBack }: Props) {
     );
   }
 
+  const baseFontSizeRem = (typography.fontScale / 100) * 1.5;
+
   return (
     <div className="space-y-6">
       {/* Header bar */}
@@ -113,6 +119,12 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         </button>
 
         <div className="flex items-center space-x-2 rtl:space-x-reverse">
+          <button
+            onClick={() => setShowTypographyModal(true)}
+            className="text-xs bg-stone-100 text-stone-800 hover:bg-stone-200 border border-stone-200 px-3 py-1 rounded-full font-semibold transition-colors flex items-center space-x-1 rtl:space-x-reverse"
+          >
+            <span>Aa Typography</span>
+          </button>
           <button
             onClick={() => setShowRoadmap(true)}
             className="text-xs bg-stone-900 text-stone-100 hover:bg-stone-800 px-3 py-1 rounded-full font-semibold transition-colors flex items-center space-x-1 rtl:space-x-reverse"
@@ -206,10 +218,15 @@ export function ReaderScreen({ surahId, onBack }: Props) {
 
                       {/* Uthmani Quranic Text - lang="ar", dir="rtl", NO letter-spacing */}
                       <p
-                        className="text-right text-2xl font-serif leading-loose text-stone-900 tracking-normal"
+                        className="text-right font-serif text-stone-900 tracking-normal transition-all"
                         lang="ar"
                         dir="rtl"
-                        style={{ letterSpacing: 'normal', wordSpacing: '0.1em' }}
+                        style={{
+                          fontSize: `${baseFontSizeRem}rem`,
+                          wordSpacing: `${typography.wordSpacing}em`,
+                          lineHeight: typography.lineHeight,
+                          letterSpacing: 'normal',
+                        }}
                       >
                         {verse.textUthmani}
                       </p>
@@ -238,6 +255,13 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         blocks={blocksWithVerses}
         activeBlockId={activeBlockId}
         onJumpToBlock={handleJumpToBlock}
+      />
+
+      {/* Typography Controls Modal */}
+      <TypographyControlsModal
+        isOpen={showTypographyModal}
+        onClose={() => setShowTypographyModal(false)}
+        onSettingsChanged={(updated) => setTypography(updated)}
       />
     </div>
   );
