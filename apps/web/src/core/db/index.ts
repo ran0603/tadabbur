@@ -17,7 +17,7 @@ export interface ThematicBlockRecord {
 }
 
 export interface VerseRecord {
-  ref: string; // e.g. "1:1"
+  ref: string;
   surahId: number;
   verseNumber: number;
   textUthmani: string;
@@ -47,7 +47,18 @@ export interface ActionItemRecord {
 
 export interface ActionCompletionRecord {
   actionId: string;
-  day: string; // ISO Date YYYY-MM-DD
+  day: string;
+}
+
+export interface JournalEntryRecord {
+  id: string;
+  verseRef: string;
+  ciphertext: Uint8Array;
+  nonce: Uint8Array;
+  keyId: string;
+  version: number;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 class LocalIndexedDB {
@@ -57,7 +68,7 @@ class LocalIndexedDB {
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('TadabburDB', 2);
+      const request = indexedDB.open('TadabburDB', 3);
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
@@ -86,6 +97,14 @@ class LocalIndexedDB {
         }
         if (!db.objectStoreNames.contains('actionCompletions')) {
           db.createObjectStore('actionCompletions', { keyPath: ['actionId', 'day'] });
+        }
+        if (!db.objectStoreNames.contains('journalEntries')) {
+          const store = db.createObjectStore('journalEntries', { keyPath: 'id' });
+          store.createIndex('verseRef', 'verseRef', { unique: false });
+          store.createIndex('updatedAt', 'updatedAt', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('settings')) {
+          db.createObjectStore('settings', { keyPath: 'key' });
         }
       };
 
@@ -265,6 +284,89 @@ class LocalIndexedDB {
         req.onsuccess = () => resolve(true);
         req.onerror = () => reject(req.error);
       }
+    });
+  }
+
+  // JOURNAL CIPHERTEXT STORAGE
+
+  async saveJournalEntry(
+    verseRef: string,
+    ciphertext: Uint8Array,
+    nonce: Uint8Array,
+    keyId: string
+  ): Promise<JournalEntryRecord> {
+    const db = await this.getDB();
+    const entry: JournalEntryRecord = {
+      id: `jnl-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      verseRef,
+      ciphertext,
+      nonce,
+      keyId,
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('journalEntries', 'readwrite');
+      const store = tx.objectStore('journalEntries');
+      const req = store.put(entry);
+      req.onsuccess = () => resolve(entry);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getJournalEntries(): Promise<JournalEntryRecord[]> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('journalEntries', 'readonly');
+      const store = tx.objectStore('journalEntries');
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const list = (req.result as JournalEntryRecord[]).filter((e) => !e.deletedAt);
+        resolve(list);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async deleteJournalEntry(id: string): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('journalEntries', 'readwrite');
+      const store = tx.objectStore('journalEntries');
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const item = req.result as JournalEntryRecord;
+        if (item) {
+          item.deletedAt = new Date().toISOString();
+          store.put(item);
+        }
+        resolve();
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async saveSetting(key: string, value: any): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('settings', 'readwrite');
+      const store = tx.objectStore('settings');
+      const req = store.put({ key, value, updatedAt: new Date().toISOString() });
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getSetting<T>(key: string): Promise<T | null> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('settings', 'readonly');
+      const store = tx.objectStore('settings');
+      const req = store.get(key);
+      req.onsuccess = () => resolve(req.result ? (req.result.value as T) : null);
+      req.onerror = () => reject(req.error);
     });
   }
 }

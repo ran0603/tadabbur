@@ -5,6 +5,7 @@ import { AnalyticsConsentBanner } from './core/analytics/AnalyticsConsentBanner'
 import { SurahList } from './features/reader/SurahList';
 import { ReaderScreen } from './features/reader/ReaderScreen';
 import { TodayScreen } from './features/actions/TodayScreen';
+import { JournalListScreen } from './features/journal/JournalListScreen';
 
 type Tab = 'library' | 'today' | 'journal' | 'settings';
 
@@ -29,7 +30,7 @@ function TadabburShell() {
             {i18n.t('common', 'appName')}
           </button>
           <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-            MVP Stage A
+            MVP Stage A-E
           </span>
         </div>
         <nav className="flex items-center space-x-4 text-sm text-stone-600 rtl:space-x-reverse">
@@ -52,7 +53,17 @@ function TadabburShell() {
           >
             {i18n.t('common', 'today')}
           </button>
-          <span className="opacity-50 cursor-not-allowed">{i18n.t('common', 'journal')}</span>
+          <button
+            onClick={() => {
+              setActiveTab('journal');
+              setSelectedSurahId(null);
+            }}
+            className={`font-medium transition-colors ${
+              activeTab === 'journal' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
+            }`}
+          >
+            {i18n.t('common', 'journal')}
+          </button>
           <span className="opacity-50 cursor-not-allowed">{i18n.t('common', 'settings')}</span>
         </nav>
       </header>
@@ -61,6 +72,8 @@ function TadabburShell() {
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6">
         {activeTab === 'today' ? (
           <TodayScreen onBrowseSurahs={navigateToLibrary} />
+        ) : activeTab === 'journal' ? (
+          <JournalListScreen onBrowseSurahs={navigateToLibrary} />
         ) : selectedSurahId === null ? (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
@@ -68,7 +81,7 @@ function TadabburShell() {
                 Mushaf Reader
               </h1>
               <p className="text-xs text-stone-600">
-                Read Quranic Surahs in thematic blocks with guided orientation cards.
+                Read Quranic Surahs in thematic blocks, write encrypted reflections, and take micro-actions.
               </p>
             </div>
             <SurahList onSelectSurah={(id) => setSelectedSurahId(id)} />
@@ -86,7 +99,7 @@ function TadabburShell() {
 
       {/* Footer */}
       <footer className="border-t border-stone-200 py-4 text-center text-xs text-stone-500">
-        Tadabbur MVP &bull; Offline PWA Shell &bull; Religious Content Integrity First
+        Tadabbur MVP &bull; Offline PWA Shell &bull; End-to-End Encryption First
       </footer>
     </div>
   );

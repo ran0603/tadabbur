@@ -11,6 +11,8 @@ export interface AnalyticsEventMap {
   action_added: { template_id: string; verse_ref: string };
   action_completed: { template_id: string; day_index: number };
   note_saved: { char_count: number; variant: 'framed' | 'open' | 'null' };
+  recovery_key_saved: Record<string, never> | {};
+  key_restore_failed: Record<string, never> | {};
   audio_played: { verse_ref: string; reciter_id: string };
   pwa_installed: { platform: string };
   consent_given: { granted: boolean };

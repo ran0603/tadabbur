@@ -10,6 +10,7 @@ import { typographyService, TypographySettings } from '../settings/typographySet
 import { TypographyControlsModal } from '../settings/TypographyControlsModal';
 import { audioService, AudioState } from '../audio/audioService';
 import { AudioPlayerBar } from '../audio/AudioPlayerBar';
+import { JournalEditor } from '../journal/JournalEditor';
 
 interface Props {
   surahId: number;
@@ -33,6 +34,7 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
   const [showTypographyModal, setShowTypographyModal] = useState(false);
+  const [activeJournalVerseRef, setActiveJournalVerseRef] = useState<string | null>(null);
   const [typography, setTypography] = useState<TypographySettings>(() => typographyService.getSettings());
   const [audioState, setAudioState] = useState<AudioState>(() => audioService.getState());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -239,6 +241,12 @@ export function ReaderScreen({ surahId, onBack }: Props) {
                           >
                             <span>{isVersePlaying ? '❚❚ Playing' : '▶ Play'}</span>
                           </button>
+                          <button
+                            onClick={() => setActiveJournalVerseRef(verse.ref)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 transition-colors"
+                          >
+                            ✏️ Note
+                          </button>
                         </div>
 
                         {/* Uthmani Quranic Text - lang="ar", dir="rtl", NO letter-spacing */}
@@ -289,6 +297,15 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         onClose={() => setShowTypographyModal(false)}
         onSettingsChanged={(updated) => setTypography(updated)}
       />
+
+      {/* Journal Editor Modal */}
+      {activeJournalVerseRef && (
+        <JournalEditor
+          verseRef={activeJournalVerseRef}
+          isOpen={Boolean(activeJournalVerseRef)}
+          onClose={() => setActiveJournalVerseRef(null)}
+        />
+      )}
 
       {/* Sticky Audio Controls Bar */}
       <AudioPlayerBar />
