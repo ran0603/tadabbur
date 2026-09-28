@@ -1,0 +1,13 @@
+{
+  "name": "@tadabbur/content-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": "./src/cli.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
