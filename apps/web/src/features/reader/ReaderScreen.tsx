@@ -8,6 +8,8 @@ import { OpeningClosingLinkModule } from '../orientation/OpeningClosingLinkModul
 import { RoadmapDrawer } from '../roadmap/RoadmapDrawer';
 import { typographyService, TypographySettings } from '../settings/typographySettings';
 import { TypographyControlsModal } from '../settings/TypographyControlsModal';
+import { audioService, AudioState } from '../audio/audioService';
+import { AudioPlayerBar } from '../audio/AudioPlayerBar';
 
 interface Props {
   surahId: number;
@@ -32,8 +34,13 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const [showRoadmap, setShowRoadmap] = useState(false);
   const [showTypographyModal, setShowTypographyModal] = useState(false);
   const [typography, setTypography] = useState<TypographySettings>(() => typographyService.getSettings());
+  const [audioState, setAudioState] = useState<AudioState>(() => audioService.getState());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    return audioService.subscribe(setAudioState);
+  }, []);
 
   useEffect(() => {
     async function loadSurahData() {
@@ -108,7 +115,7 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const baseFontSizeRem = (typography.fontScale / 100) * 1.5;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-stone-200 pb-4">
         <button
@@ -204,38 +211,57 @@ export function ReaderScreen({ surahId, onBack }: Props) {
             {/* Verses Container */}
             <div className="p-6 space-y-6">
               {block.verses.length > 0 ? (
-                block.verses.map((verse) => (
-                  <div
-                    id={`verse-${verse.ref}`}
-                    key={verse.ref}
-                    className="p-4 rounded-xl border border-stone-100 hover:border-amber-200 bg-stone-50/30 transition-all duration-300"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Verse number marker */}
-                      <span className="w-8 h-8 rounded-full bg-amber-100/70 text-amber-900 text-xs font-semibold flex items-center justify-center shrink-0">
-                        {verse.verseNumber}
-                      </span>
+                block.verses.map((verse) => {
+                  const isVersePlaying = audioState.currentVerseRef === verse.ref && audioState.isPlaying;
+                  return (
+                    <div
+                      id={`verse-${verse.ref}`}
+                      key={verse.ref}
+                      className={`p-4 rounded-xl border transition-all duration-300 ${
+                        isVersePlaying
+                          ? 'border-amber-400 bg-amber-50/60 ring-2 ring-amber-500/20 shadow-sm'
+                          : 'border-stone-100 hover:border-amber-200 bg-stone-50/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Verse controls & marker */}
+                        <div className="flex items-center space-x-2 shrink-0">
+                          <span className="w-8 h-8 rounded-full bg-amber-100/70 text-amber-900 text-xs font-semibold flex items-center justify-center">
+                            {verse.verseNumber}
+                          </span>
+                          <button
+                            onClick={() => audioService.playVerse(verse.ref, surahId)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-colors ${
+                              isVersePlaying
+                                ? 'bg-amber-900 text-amber-100'
+                                : 'bg-stone-100 hover:bg-amber-100 text-stone-700 hover:text-amber-950'
+                            }`}
+                          >
+                            <span>{isVersePlaying ? '❚❚ Playing' : '▶ Play'}</span>
+                          </button>
+                        </div>
 
-                      {/* Uthmani Quranic Text - lang="ar", dir="rtl", NO letter-spacing */}
-                      <p
-                        className="text-right font-serif text-stone-900 tracking-normal transition-all"
-                        lang="ar"
-                        dir="rtl"
-                        style={{
-                          fontSize: `${baseFontSizeRem}rem`,
-                          wordSpacing: `${typography.wordSpacing}em`,
-                          lineHeight: typography.lineHeight,
-                          letterSpacing: 'normal',
-                        }}
-                      >
-                        {verse.textUthmani}
-                      </p>
+                        {/* Uthmani Quranic Text - lang="ar", dir="rtl", NO letter-spacing */}
+                        <p
+                          className="text-right font-serif text-stone-900 tracking-normal transition-all"
+                          lang="ar"
+                          dir="rtl"
+                          style={{
+                            fontSize: `${baseFontSizeRem}rem`,
+                            wordSpacing: `${typography.wordSpacing}em`,
+                            lineHeight: typography.lineHeight,
+                            letterSpacing: 'normal',
+                          }}
+                        >
+                          {verse.textUthmani}
+                        </p>
+                      </div>
+
+                      {/* Curated Verse Action Menu */}
+                      <VerseActionMenu verseRef={verse.ref} />
                     </div>
-
-                    {/* Curated Verse Action Menu */}
-                    <VerseActionMenu verseRef={verse.ref} />
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-xs text-stone-400 italic text-center py-4">
                   No text preview in fixture for this verse range.
@@ -263,6 +289,9 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         onClose={() => setShowTypographyModal(false)}
         onSettingsChanged={(updated) => setTypography(updated)}
       />
+
+      {/* Sticky Audio Controls Bar */}
+      <AudioPlayerBar />
     </div>
   );
 }
