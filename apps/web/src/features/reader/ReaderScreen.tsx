@@ -5,6 +5,7 @@ import { VerseActionMenu } from '../actions/VerseActionMenu';
 import { OrientationCard } from '../orientation/OrientationCard';
 import { MacroOrientationView } from '../orientation/MacroOrientationView';
 import { OpeningClosingLinkModule } from '../orientation/OpeningClosingLinkModule';
+import { RoadmapDrawer } from '../roadmap/RoadmapDrawer';
 
 interface Props {
   surahId: number;
@@ -26,6 +27,8 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const [checksumVerified, setChecksumVerified] = useState<boolean | null>(null);
   const [showOrientation, setShowOrientation] = useState(true);
   const [showMacroModal, setShowMacroModal] = useState(false);
+  const [showRoadmap, setShowRoadmap] = useState(false);
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +55,7 @@ export function ReaderScreen({ surahId, onBack }: Props) {
           verses: verses.filter((v) => v.blockId === b.id),
         }));
         setBlocksWithVerses(structured);
+        setActiveBlockId(structured[0]?.id || null);
       } else {
         // Fallback single block for non-structured Surahs
         const fallbackBlock: BlockWithVerses = {
@@ -63,6 +67,7 @@ export function ReaderScreen({ surahId, onBack }: Props) {
           verses: verses,
         };
         setBlocksWithVerses([fallbackBlock]);
+        setActiveBlockId(fallbackBlock.id);
       }
 
       setLoading(false);
@@ -77,6 +82,14 @@ export function ReaderScreen({ surahId, onBack }: Props) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.classList.add('ring-2', 'ring-amber-500');
       setTimeout(() => el.classList.remove('ring-2', 'ring-amber-500'), 2500);
+    }
+  }
+
+  function handleJumpToBlock(blockId: string) {
+    setActiveBlockId(blockId);
+    const el = document.getElementById(`block-${blockId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
@@ -100,6 +113,12 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         </button>
 
         <div className="flex items-center space-x-2 rtl:space-x-reverse">
+          <button
+            onClick={() => setShowRoadmap(true)}
+            className="text-xs bg-stone-900 text-stone-100 hover:bg-stone-800 px-3 py-1 rounded-full font-semibold transition-colors flex items-center space-x-1 rtl:space-x-reverse"
+          >
+            <span>🗺️ Roadmap</span>
+          </button>
           <button
             onClick={() => setShowMacroModal(!showMacroModal)}
             className="text-xs bg-amber-50 text-amber-900 border border-amber-200 px-3 py-1 rounded-full font-semibold hover:bg-amber-100 transition-colors"
@@ -145,8 +164,12 @@ export function ReaderScreen({ surahId, onBack }: Props) {
       <div className="space-y-8">
         {blocksWithVerses.map((block) => (
           <section
+            id={`block-${block.id}`}
             key={block.id}
-            onMouseEnter={() => analytics.track('block_viewed', { surah_id: surahId, block_id: block.id })}
+            onMouseEnter={() => {
+              setActiveBlockId(block.id);
+              analytics.track('block_viewed', { surah_id: surahId, block_id: block.id });
+            }}
             className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm"
           >
             {/* Block Header */}
@@ -205,6 +228,17 @@ export function ReaderScreen({ surahId, onBack }: Props) {
           </section>
         ))}
       </div>
+
+      {/* Roadmap Drawer Component */}
+      <RoadmapDrawer
+        isOpen={showRoadmap}
+        onClose={() => setShowRoadmap(false)}
+        surahId={surahId}
+        surahNameEn={surah.nameEn}
+        blocks={blocksWithVerses}
+        activeBlockId={activeBlockId}
+        onJumpToBlock={handleJumpToBlock}
+      />
     </div>
   );
 }
