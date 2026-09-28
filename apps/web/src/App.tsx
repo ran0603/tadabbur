@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ErrorBoundary } from './core/errors/ErrorBoundary';
 import { i18n } from './core/i18n';
+import { AnalyticsConsentBanner } from './core/analytics/AnalyticsConsentBanner';
 import { SurahList } from './features/reader/SurahList';
 import { ReaderScreen } from './features/reader/ReaderScreen';
 import { TodayScreen } from './features/actions/TodayScreen';
@@ -67,7 +68,7 @@ function TadabburShell() {
                 Mushaf Reader
               </h1>
               <p className="text-xs text-stone-600">
-                Read Quranic Surahs in thematic blocks and add curated actions.
+                Read Quranic Surahs in thematic blocks with guided orientation cards.
               </p>
             </div>
             <SurahList onSelectSurah={(id) => setSelectedSurahId(id)} />
@@ -79,6 +80,9 @@ function TadabburShell() {
           />
         )}
       </main>
+
+      {/* Analytics Consent Banner */}
+      <AnalyticsConsentBanner />
 
       {/* Footer */}
       <footer className="border-t border-stone-200 py-4 text-center text-xs text-stone-500">

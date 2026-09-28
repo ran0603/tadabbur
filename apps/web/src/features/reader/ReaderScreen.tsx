@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { db, SurahRecord, VerseRecord } from '../../core/db';
 import { analytics } from '../../core/analytics';
 import { VerseActionMenu } from '../actions/VerseActionMenu';
+import { OrientationCard } from '../orientation/OrientationCard';
 
 interface Props {
   surahId: number;
@@ -21,6 +22,7 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const [surah, setSurah] = useState<SurahRecord | null>(null);
   const [blocksWithVerses, setBlocksWithVerses] = useState<BlockWithVerses[]>([]);
   const [checksumVerified, setChecksumVerified] = useState<boolean | null>(null);
+  const [showOrientation, setShowOrientation] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -86,24 +88,32 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         </button>
 
         {checksumVerified && (
-          <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-full">
+          <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-full font-medium">
             Checksum Verified
           </span>
         )}
       </div>
 
-      {/* Surah Title Banner */}
-      <div className="bg-gradient-to-br from-amber-900 to-stone-900 text-stone-100 rounded-2xl p-6 text-center shadow-sm">
-        <h2 className="text-3xl font-serif font-bold mb-1" lang="ar" dir="rtl">
-          {surah.nameAr}
-        </h2>
-        <p className="text-lg font-medium text-amber-200">{surah.nameEn}</p>
-        <div className="mt-2 text-xs text-stone-300 space-x-3 rtl:space-x-reverse">
-          <span className="capitalize">{surah.revelationType}</span>
-          <span>&bull;</span>
-          <span>{surah.verseCount} Verses</span>
+      {/* Guided Orientation Card (Rendered before Verse 1) */}
+      {showOrientation ? (
+        <OrientationCard surahId={surahId} onComplete={() => setShowOrientation(false)} />
+      ) : (
+        /* Surah Title Banner */
+        <div className="bg-gradient-to-br from-amber-900 to-stone-900 text-stone-100 rounded-2xl p-6 text-center shadow-sm flex items-center justify-between">
+          <div className="text-left">
+            <h2 className="text-2xl font-serif font-bold" lang="ar" dir="rtl">
+              {surah.nameAr}
+            </h2>
+            <p className="text-sm font-medium text-amber-200">{surah.nameEn}</p>
+          </div>
+          <button
+            onClick={() => setShowOrientation(true)}
+            className="text-xs text-amber-200 hover:text-white bg-amber-950/60 px-3 py-1.5 rounded-lg border border-amber-800/50"
+          >
+            Show Overview
+          </button>
         </div>
-      </div>
+      )}
 
       {/* Thematic Blocks */}
       <div className="space-y-8">

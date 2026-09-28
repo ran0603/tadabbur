@@ -9,27 +9,64 @@ export interface AnalyticsEventMap {
   note_saved: { char_count: number; variant: 'framed' | 'open' | 'null' };
   audio_played: { verse_ref: string; reciter_id: string };
   pwa_installed: { platform: string };
+  consent_given: { granted: boolean };
 }
 
 export interface Analytics {
   setConsent(consentGranted: boolean): void;
+  hasConsent(): boolean;
+  getAnonymousId(): string;
   track<E extends keyof AnalyticsEventMap>(event: E, properties?: AnalyticsEventMap[E]): void;
 }
 
 class RedactedAnalytics implements Analytics {
-  private hasConsent = false;
+  private consentGranted: boolean = false;
+  private anonymousId: string = '';
 
-  setConsent(consentGranted: boolean): void {
-    this.hasConsent = consentGranted;
+  constructor() {
+    this.anonymousId = this.getOrInitAnonymousId();
+    const storedConsent = localStorage.getItem('tadabbur_analytics_consent');
+    this.consentGranted = storedConsent === 'true';
+  }
+
+  private getOrInitAnonymousId(): string {
+    let id = localStorage.getItem('tadabbur_anon_id');
+    if (!id) {
+      id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `anon_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      localStorage.setItem('tadabbur_anon_id', id);
+    }
+    return id;
+  }
+
+  setConsent(granted: boolean): void {
+    this.consentGranted = granted;
+    localStorage.setItem('tadabbur_analytics_consent', String(granted));
+    if (granted) {
+      this.track('consent_given', { granted: true });
+    }
+  }
+
+  hasConsent(): boolean {
+    return this.consentGranted;
+  }
+
+  getAnonymousId(): string {
+    return this.anonymousId;
   }
 
   track<E extends keyof AnalyticsEventMap>(event: E, properties?: AnalyticsEventMap[E]): void {
-    if (!this.hasConsent) return;
-    
-    // Scrub properties to guarantee zero text payloads
+    if (!this.consentGranted) return;
+
     const sanitizedProps = this.sanitizeProps(properties);
+    const payload = {
+      event,
+      anonymousId: this.anonymousId,
+      timestamp: new Date().toISOString(),
+      properties: sanitizedProps,
+    };
+
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`[Analytics] Event: ${String(event)}`, sanitizedProps);
+      console.log(`[Analytics] Event: ${String(event)}`, payload);
     }
   }
 
@@ -37,8 +74,8 @@ class RedactedAnalytics implements Analytics {
     if (!props || typeof props !== 'object') return props;
     const clean: Record<string, any> = {};
     for (const [key, val] of Object.entries(props)) {
-      // Disallow any field named text, note, body, passphrase, key
-      if (['text', 'note', 'body', 'passphrase', 'key', 'ciphertext'].includes(key)) {
+      // Disallow any user text fields
+      if (['text', 'note', 'body', 'passphrase', 'key', 'ciphertext', 'userText', 'input'].includes(key)) {
         continue;
       }
       clean[key] = val;
