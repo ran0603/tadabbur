@@ -4,6 +4,10 @@ export interface AnalyticsEventMap {
   orientation_shown: { surah_id: number };
   orientation_dismissed: { surah_id: number; dwell_ms?: number };
   orientation_completed: { surah_id: number };
+  orientation_section_expanded: { surah_id: number };
+  symmetry_viewed: { surah_id: number };
+  roadmap_opened: { surah_id: number };
+  roadmap_jumped: { surah_id: number; block_id: string };
   action_added: { template_id: string; verse_ref: string };
   action_completed: { template_id: string; day_index: number };
   note_saved: { char_count: number; variant: 'framed' | 'open' | 'null' };
@@ -74,7 +78,6 @@ class RedactedAnalytics implements Analytics {
     if (!props || typeof props !== 'object') return props;
     const clean: Record<string, any> = {};
     for (const [key, val] of Object.entries(props)) {
-      // Disallow any user text fields
       if (['text', 'note', 'body', 'passphrase', 'key', 'ciphertext', 'userText', 'input'].includes(key)) {
         continue;
       }

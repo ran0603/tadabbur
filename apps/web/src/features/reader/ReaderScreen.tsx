@@ -3,6 +3,7 @@ import { db, SurahRecord, VerseRecord } from '../../core/db';
 import { analytics } from '../../core/analytics';
 import { VerseActionMenu } from '../actions/VerseActionMenu';
 import { OrientationCard } from '../orientation/OrientationCard';
+import { MacroOrientationView } from '../orientation/MacroOrientationView';
 
 interface Props {
   surahId: number;
@@ -23,6 +24,7 @@ export function ReaderScreen({ surahId, onBack }: Props) {
   const [blocksWithVerses, setBlocksWithVerses] = useState<BlockWithVerses[]>([]);
   const [checksumVerified, setChecksumVerified] = useState<boolean | null>(null);
   const [showOrientation, setShowOrientation] = useState(true);
+  const [showMacroModal, setShowMacroModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -87,15 +89,26 @@ export function ReaderScreen({ surahId, onBack }: Props) {
           <span>&larr; Back to Library</span>
         </button>
 
-        {checksumVerified && (
-          <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-full font-medium">
-            Checksum Verified
-          </span>
-        )}
+        <div className="flex items-center space-x-2 rtl:space-x-reverse">
+          <button
+            onClick={() => setShowMacroModal(!showMacroModal)}
+            className="text-xs bg-amber-50 text-amber-900 border border-amber-200 px-3 py-1 rounded-full font-semibold hover:bg-amber-100 transition-colors"
+          >
+            {showMacroModal ? 'Hide Overview' : 'Macro Orientation'}
+          </button>
+          {checksumVerified && (
+            <span className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200/60 px-2 py-0.5 rounded-full font-medium">
+              Checksum Verified
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Guided Orientation Card (Rendered before Verse 1) */}
-      {showOrientation ? (
+      {/* Full Macro Orientation View */}
+      {showMacroModal ? (
+        <MacroOrientationView surahId={surahId} />
+      ) : showOrientation ? (
+        /* Guided Orientation Card (Rendered before Verse 1) */
         <OrientationCard surahId={surahId} onComplete={() => setShowOrientation(false)} />
       ) : (
         /* Surah Title Banner */
