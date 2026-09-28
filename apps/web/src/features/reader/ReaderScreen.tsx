@@ -4,6 +4,7 @@ import { analytics } from '../../core/analytics';
 import { VerseActionMenu } from '../actions/VerseActionMenu';
 import { OrientationCard } from '../orientation/OrientationCard';
 import { MacroOrientationView } from '../orientation/MacroOrientationView';
+import { OpeningClosingLinkModule } from '../orientation/OpeningClosingLinkModule';
 
 interface Props {
   surahId: number;
@@ -70,6 +71,15 @@ export function ReaderScreen({ surahId, onBack }: Props) {
     loadSurahData();
   }, [surahId]);
 
+  function handleJumpToVerse(verseRef: string) {
+    const el = document.getElementById(`verse-${verseRef}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-amber-500');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-amber-500'), 2500);
+    }
+  }
+
   if (loading || !surah) {
     return (
       <div className="p-8 text-center text-stone-500 animate-pulse">
@@ -128,6 +138,9 @@ export function ReaderScreen({ surahId, onBack }: Props) {
         </div>
       )}
 
+      {/* Opening-Closing Symmetry Link Module */}
+      <OpeningClosingLinkModule surahId={surahId} onJumpToVerse={handleJumpToVerse} />
+
       {/* Thematic Blocks */}
       <div className="space-y-8">
         {blocksWithVerses.map((block) => (
@@ -158,8 +171,9 @@ export function ReaderScreen({ surahId, onBack }: Props) {
               {block.verses.length > 0 ? (
                 block.verses.map((verse) => (
                   <div
+                    id={`verse-${verse.ref}`}
                     key={verse.ref}
-                    className="p-4 rounded-xl border border-stone-100 hover:border-amber-200 bg-stone-50/30 transition-colors"
+                    className="p-4 rounded-xl border border-stone-100 hover:border-amber-200 bg-stone-50/30 transition-all duration-300"
                   >
                     <div className="flex items-start justify-between gap-4">
                       {/* Verse number marker */}
