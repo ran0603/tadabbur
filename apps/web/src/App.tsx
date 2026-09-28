@@ -1,99 +1,84 @@
+import { ErrorBoundary } from './core/errors/ErrorBoundary';
+import { i18n } from './core/i18n';
+import { featureFlags } from './core/flags';
+
+function TadabburShell() {
+  const flags = featureFlags.getAll();
+
+  return (
+    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col">
+      {/* Header */}
+      <header className="border-b border-stone-200 bg-white/80 backdrop-blur sticky top-0 z-20 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center space-x-3 rtl:space-x-reverse">
+          <span className="text-xl font-bold tracking-tight text-amber-900">
+            {i18n.t('common', 'appName')}
+          </span>
+          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
+            MVP Stage A
+          </span>
+        </div>
+        <nav className="flex items-center space-x-4 text-sm text-stone-600 rtl:space-x-reverse">
+          <span className="font-medium text-stone-900">{i18n.t('common', 'library')}</span>
+          <span>{i18n.t('common', 'today')}</span>
+          <span>{i18n.t('common', 'journal')}</span>
+          <span>{i18n.t('common', 'settings')}</span>
+        </nav>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-4xl w-full mx-auto p-6">
+        <div className="bg-white rounded-2xl border border-stone-200 p-8 shadow-sm">
+          <h1 className="text-2xl font-serif font-bold text-stone-900 mb-2">
+            Quranic Reflection & Action
+          </h1>
+          <p className="text-stone-600 mb-6">
+            Offline-first Mushaf reader with thematic blocks, orientation cards, and private encrypted reflections.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-stone-100">
+            <div className="p-4 rounded-xl bg-stone-50 border border-stone-200/60">
+              <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                Active Flags
+              </span>
+              <ul className="mt-2 text-xs font-mono space-y-1 text-stone-700">
+                {Object.entries(flags).map(([key, val]) => (
+                  <li key={key} className="flex justify-between">
+                    <span>{key}:</span>
+                    <span className={val ? 'text-emerald-700 font-bold' : 'text-stone-400'}>
+                      {String(val)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200/60">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-800">
+                Audio Reciter baseline
+              </span>
+              <p className="mt-2 text-sm text-amber-950 font-medium">
+                Sheikh Maher Al Muaiqly (Ayah-by-Ayah)
+              </p>
+              <p className="mt-1 text-xs text-amber-800/80">
+                Source path: <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">/content/source/audio/maher_al_muaiqly/</code>
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-stone-200 py-4 text-center text-xs text-stone-500">
+        Tadabbur MVP &bull; Offline PWA Shell &bull; Privacy & E2E Encryption First
+      </footer>
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/App.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vite.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <img
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://vite.dev/guide/"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Vite features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://react.dev/learn"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about React 19 features in the official documentation.
-          </p>
-        </a>
-
-        <a
-          href="https://vite.dev/plugins/"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Plugins{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore the ecosystem of official and community Vite plugins.
-          </p>
-        </a>
-
-        <a
-          href="https://vite.dev/guide/static-deploy"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Deploy your Vite SPA build to any static host.
-          </p>
-        </a>
-      </div>
-    </main>
+    <ErrorBoundary>
+      <TadabburShell />
+    </ErrorBoundary>
   );
 }
