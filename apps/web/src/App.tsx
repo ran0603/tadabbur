@@ -6,8 +6,9 @@ import { SurahList } from './features/reader/SurahList';
 import { ReaderScreen } from './features/reader/ReaderScreen';
 import { TodayScreen } from './features/actions/TodayScreen';
 import { JournalListScreen } from './features/journal/JournalListScreen';
+import { AccountScreen } from './features/account/AccountScreen';
 
-type Tab = 'library' | 'today' | 'journal' | 'settings';
+type Tab = 'library' | 'today' | 'journal' | 'account';
 
 function TadabburShell() {
   const [activeTab, setActiveTab] = useState<Tab>('library');
@@ -64,7 +65,17 @@ function TadabburShell() {
           >
             {i18n.t('common', 'journal')}
           </button>
-          <span className="opacity-50 cursor-not-allowed">{i18n.t('common', 'settings')}</span>
+          <button
+            onClick={() => {
+              setActiveTab('account');
+              setSelectedSurahId(null);
+            }}
+            className={`font-medium transition-colors ${
+              activeTab === 'account' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
+            }`}
+          >
+            Account
+          </button>
         </nav>
       </header>
 
@@ -74,6 +85,8 @@ function TadabburShell() {
           <TodayScreen onBrowseSurahs={navigateToLibrary} />
         ) : activeTab === 'journal' ? (
           <JournalListScreen onBrowseSurahs={navigateToLibrary} />
+        ) : activeTab === 'account' ? (
+          <AccountScreen />
         ) : selectedSurahId === null ? (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">

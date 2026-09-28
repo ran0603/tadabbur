@@ -61,6 +61,16 @@ export interface JournalEntryRecord {
   deletedAt: string | null;
 }
 
+export interface OutboxRecord {
+  id: string;
+  type: 'journal_saved' | 'journal_deleted' | 'action_added' | 'action_completed' | 'key_wrap_saved';
+  payload: any;
+  status: 'pending' | 'processing' | 'failed';
+  attempts: number;
+  createdAt: string;
+  lastAttemptAt?: string;
+}
+
 class LocalIndexedDB {
   private dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -68,7 +78,7 @@ class LocalIndexedDB {
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('TadabburDB', 3);
+      const request = indexedDB.open('TadabburDB', 4);
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
@@ -105,6 +115,10 @@ class LocalIndexedDB {
         }
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('outbox')) {
+          const store = db.createObjectStore('outbox', { keyPath: 'id' });
+          store.createIndex('status', 'status', { unique: false });
         }
       };
 
@@ -366,6 +380,76 @@ class LocalIndexedDB {
       const store = tx.objectStore('settings');
       const req = store.get(key);
       req.onsuccess = () => resolve(req.result ? (req.result.value as T) : null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // OUTBOX QUEUE METHODS
+
+  async addOutboxItem(
+    type: OutboxRecord['type'],
+    payload: any
+  ): Promise<OutboxRecord> {
+    const db = await this.getDB();
+    const item: OutboxRecord = {
+      id: `out-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      type,
+      payload,
+      status: 'pending',
+      attempts: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('outbox', 'readwrite');
+      const store = tx.objectStore('outbox');
+      const req = store.put(item);
+      req.onsuccess = () => resolve(item);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getPendingOutboxItems(): Promise<OutboxRecord[]> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('outbox', 'readonly');
+      const store = tx.objectStore('outbox');
+      const index = store.index('status');
+      const req = index.getAll('pending');
+      req.onsuccess = () => resolve(req.result as OutboxRecord[]);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async removeOutboxItem(id: string): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('outbox', 'readwrite');
+      const store = tx.objectStore('outbox');
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async markOutboxItemFailed(id: string): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('outbox', 'readwrite');
+      const store = tx.objectStore('outbox');
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const item = req.result as OutboxRecord;
+        if (item) {
+          item.attempts += 1;
+          item.lastAttemptAt = new Date().toISOString();
+          if (item.attempts >= 5) {
+            item.status = 'failed';
+          }
+          store.put(item);
+        }
+        resolve();
+      };
       req.onerror = () => reject(req.error);
     });
   }

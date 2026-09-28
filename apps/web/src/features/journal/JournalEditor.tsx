@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateDeviceDEK, encryptJournalPayload } from '@tadabbur/crypto';
-import { db } from '../../core/db';
+import { syncService } from '../../core/sync/syncService';
 import { analytics } from '../../core/analytics';
 import { featureFlags } from '../../core/flags';
 
@@ -51,8 +51,8 @@ export function JournalEditor({ verseRef, isOpen, onClose, onSaved }: Props) {
       // AES-256-GCM envelope encryption
       const envelope = await encryptJournalPayload(dek, payload);
 
-      // Save binary ciphertext to IndexedDB
-      await db.saveJournalEntry(verseRef, envelope.ciphertext, envelope.nonce, envelope.keyId);
+      // Save binary ciphertext to IndexedDB and queue in sync outbox
+      await syncService.queueJournalSave(verseRef, envelope.ciphertext, envelope.nonce, envelope.keyId);
 
       // Log note_saved analytics event (ZERO user text)
       analytics.track('note_saved', {
