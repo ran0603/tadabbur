@@ -3,9 +3,18 @@ import { ErrorBoundary } from './core/errors/ErrorBoundary';
 import { i18n } from './core/i18n';
 import { SurahList } from './features/reader/SurahList';
 import { ReaderScreen } from './features/reader/ReaderScreen';
+import { TodayScreen } from './features/actions/TodayScreen';
+
+type Tab = 'library' | 'today' | 'journal' | 'settings';
 
 function TadabburShell() {
+  const [activeTab, setActiveTab] = useState<Tab>('library');
   const [selectedSurahId, setSelectedSurahId] = useState<number | null>(null);
+
+  const navigateToLibrary = () => {
+    setActiveTab('library');
+    setSelectedSurahId(null);
+  };
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col">
@@ -13,7 +22,7 @@ function TadabburShell() {
       <header className="border-b border-stone-200 bg-white/80 backdrop-blur sticky top-0 z-20 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3 rtl:space-x-reverse">
           <button
-            onClick={() => setSelectedSurahId(null)}
+            onClick={navigateToLibrary}
             className="text-xl font-bold tracking-tight text-amber-900 hover:text-amber-950 transition-colors"
           >
             {i18n.t('common', 'appName')}
@@ -24,29 +33,41 @@ function TadabburShell() {
         </div>
         <nav className="flex items-center space-x-4 text-sm text-stone-600 rtl:space-x-reverse">
           <button
-            onClick={() => setSelectedSurahId(null)}
+            onClick={navigateToLibrary}
             className={`font-medium transition-colors ${
-              selectedSurahId === null ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
+              activeTab === 'library' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
             }`}
           >
             {i18n.t('common', 'library')}
           </button>
-          <span>{i18n.t('common', 'today')}</span>
-          <span>{i18n.t('common', 'journal')}</span>
-          <span>{i18n.t('common', 'settings')}</span>
+          <button
+            onClick={() => {
+              setActiveTab('today');
+              setSelectedSurahId(null);
+            }}
+            className={`font-medium transition-colors ${
+              activeTab === 'today' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
+            }`}
+          >
+            {i18n.t('common', 'today')}
+          </button>
+          <span className="opacity-50 cursor-not-allowed">{i18n.t('common', 'journal')}</span>
+          <span className="opacity-50 cursor-not-allowed">{i18n.t('common', 'settings')}</span>
         </nav>
       </header>
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6">
-        {selectedSurahId === null ? (
+        {activeTab === 'today' ? (
+          <TodayScreen onBrowseSurahs={navigateToLibrary} />
+        ) : selectedSurahId === null ? (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
               <h1 className="text-xl font-serif font-bold text-stone-900 mb-1">
                 Mushaf Reader
               </h1>
               <p className="text-xs text-stone-600">
-                Read Quranic Surahs in thematic blocks with offline verification.
+                Read Quranic Surahs in thematic blocks and add curated actions.
               </p>
             </div>
             <SurahList onSelectSurah={(id) => setSelectedSurahId(id)} />

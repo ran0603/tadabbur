@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db, SurahRecord, VerseRecord } from '../../core/db';
 import { analytics } from '../../core/analytics';
+import { VerseActionMenu } from '../actions/VerseActionMenu';
 
 interface Props {
   surahId: number;
@@ -153,6 +154,9 @@ export function ReaderScreen({ surahId, onBack }: Props) {
                         {verse.textUthmani}
                       </p>
                     </div>
+
+                    {/* Curated Verse Action Menu */}
+                    <VerseActionMenu verseRef={verse.ref} />
                   </div>
                 ))
               ) : (

@@ -31,6 +31,25 @@ export interface PackStateRecord {
   installedAt: string;
 }
 
+export interface ActionTemplateRecord {
+  id: string;
+  verseRef: string;
+  text: string;
+}
+
+export interface ActionItemRecord {
+  id: string;
+  templateId: string;
+  verseRef: string;
+  status: 'active' | 'archived';
+  createdAt: string;
+}
+
+export interface ActionCompletionRecord {
+  actionId: string;
+  day: string; // ISO Date YYYY-MM-DD
+}
+
 class LocalIndexedDB {
   private dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -38,7 +57,7 @@ class LocalIndexedDB {
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('TadabburDB', 1);
+      const request = indexedDB.open('TadabburDB', 2);
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
@@ -56,6 +75,17 @@ class LocalIndexedDB {
         }
         if (!db.objectStoreNames.contains('packState')) {
           db.createObjectStore('packState', { keyPath: 'packId' });
+        }
+        if (!db.objectStoreNames.contains('actionTemplates')) {
+          const store = db.createObjectStore('actionTemplates', { keyPath: 'id' });
+          store.createIndex('verseRef', 'verseRef', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('actionItems')) {
+          const store = db.createObjectStore('actionItems', { keyPath: 'id' });
+          store.createIndex('verseRef', 'verseRef', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('actionCompletions')) {
+          db.createObjectStore('actionCompletions', { keyPath: ['actionId', 'day'] });
         }
       };
 
@@ -132,23 +162,109 @@ class LocalIndexedDB {
     version: string,
     surahs: SurahRecord[],
     blocks: ThematicBlockRecord[],
-    verses: VerseRecord[]
+    verses: VerseRecord[],
+    actionTemplates: ActionTemplateRecord[] = []
   ): Promise<void> {
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(['surahs', 'blocks', 'verses', 'packState'], 'readwrite');
+      const tx = db.transaction(['surahs', 'blocks', 'verses', 'packState', 'actionTemplates'], 'readwrite');
       const surahStore = tx.objectStore('surahs');
       const blockStore = tx.objectStore('blocks');
       const verseStore = tx.objectStore('verses');
       const packStore = tx.objectStore('packState');
+      const templateStore = tx.objectStore('actionTemplates');
 
       for (const s of surahs) surahStore.put(s);
       for (const b of blocks) blockStore.put(b);
       for (const v of verses) verseStore.put(v);
+      for (const t of actionTemplates) templateStore.put(t);
       packStore.put({ packId, version, installedAt: new Date().toISOString() });
 
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getActionTemplatesForVerse(verseRef: string): Promise<ActionTemplateRecord[]> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('actionTemplates', 'readonly');
+      const store = tx.objectStore('actionTemplates');
+      const index = store.index('verseRef');
+      const req = index.getAll(verseRef);
+      req.onsuccess = () => resolve(req.result as ActionTemplateRecord[]);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getActionItems(): Promise<ActionItemRecord[]> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('actionItems', 'readonly');
+      const store = tx.objectStore('actionItems');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result as ActionItemRecord[]);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async addActionItem(templateId: string, verseRef: string): Promise<ActionItemRecord> {
+    const db = await this.getDB();
+    const newItem: ActionItemRecord = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      templateId,
+      verseRef,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('actionItems', 'readwrite');
+      const store = tx.objectStore('actionItems');
+      const req = store.put(newItem);
+      req.onsuccess = () => resolve(newItem);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getActionTemplate(id: string): Promise<ActionTemplateRecord | null> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('actionTemplates', 'readonly');
+      const store = tx.objectStore('actionTemplates');
+      const req = store.get(id);
+      req.onsuccess = () => resolve((req.result as ActionTemplateRecord) || null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async isActionCompletedToday(actionId: string, day: string): Promise<boolean> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('actionCompletions', 'readonly');
+      const store = tx.objectStore('actionCompletions');
+      const req = store.get([actionId, day]);
+      req.onsuccess = () => resolve(Boolean(req.result));
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async toggleActionCompletion(actionId: string, day: string): Promise<boolean> {
+    const db = await this.getDB();
+    const completed = await this.isActionCompletedToday(actionId, day);
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('actionCompletions', 'readwrite');
+      const store = tx.objectStore('actionCompletions');
+      if (completed) {
+        const req = store.delete([actionId, day]);
+        req.onsuccess = () => resolve(false);
+        req.onerror = () => reject(req.error);
+      } else {
+        const req = store.put({ actionId, day });
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      }
     });
   }
 }

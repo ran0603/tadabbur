@@ -1,4 +1,4 @@
-import { db, SurahRecord, ThematicBlockRecord, VerseRecord } from '../../core/db';
+import { db, SurahRecord, ThematicBlockRecord, VerseRecord, ActionTemplateRecord } from '../../core/db';
 
 export const FIXTURE_DATA = {
   fixture: true,
@@ -75,10 +75,32 @@ export const FIXTURE_DATA = {
     { ref: '78:17', surahId: 78, verseNumber: 17, textUthmani: 'إِنَّ يَوْمَ الْفَصْلِ كَانَ مِيقَاتًا', blockId: 'block-78-2', juz: 30 },
     { ref: '78:31', surahId: 78, verseNumber: 31, textUthmani: 'إِنَّ لِلْمُتَّقِينَ مَفَازًا', blockId: 'block-78-3', juz: 30 },
   ],
+  actionTemplates: [
+    {
+      id: 'act-tmpl-1-5',
+      verseRef: '1:5',
+      text: 'Pause before starting a daily task and pray for Allah’s help first.',
+    },
+    {
+      id: 'act-tmpl-112-1',
+      verseRef: '112:1',
+      text: 'Recite Al-Ikhlas with deep presence of Allah’s Oneness.',
+    },
+    {
+      id: 'act-tmpl-78-1',
+      verseRef: '78:1',
+      text: 'Take 2 minutes tonight to reflect on accountability for today’s deeds.',
+    },
+    {
+      id: 'act-tmpl-78-31',
+      verseRef: '78:31',
+      text: 'Perform one sincere hidden good deed for the sake of Allah.',
+    },
+  ],
 };
 
 export async function ensureFixturePackLoaded(): Promise<void> {
-  const packId = 'juz-30-fixture';
+  const packId = 'juz-30-fixture-v2';
   const existingPack = await db.getPackState(packId);
   if (existingPack) return;
 
@@ -87,6 +109,7 @@ export async function ensureFixturePackLoaded(): Promise<void> {
     FIXTURE_DATA.contentVersion,
     FIXTURE_DATA.surahs as SurahRecord[],
     FIXTURE_DATA.blocks as ThematicBlockRecord[],
-    FIXTURE_DATA.verses as VerseRecord[]
+    FIXTURE_DATA.verses as VerseRecord[],
+    FIXTURE_DATA.actionTemplates as ActionTemplateRecord[]
   );
 }
