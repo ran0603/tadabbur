@@ -1,119 +1,204 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ErrorBoundary } from './core/errors/ErrorBoundary';
-import { i18n } from './core/i18n';
+import { db } from './core/db';
 import { AnalyticsConsentBanner } from './core/analytics/AnalyticsConsentBanner';
+import { HomeScreen } from './features/home/HomeScreen';
+import { OnboardingFlow } from './features/onboarding/OnboardingFlow';
 import { SurahList } from './features/reader/SurahList';
 import { ReaderScreen } from './features/reader/ReaderScreen';
 import { TodayScreen } from './features/actions/TodayScreen';
 import { JournalListScreen } from './features/journal/JournalListScreen';
 import { AccountScreen } from './features/account/AccountScreen';
 
-type Tab = 'library' | 'today' | 'journal' | 'account';
+type Tab = 'home' | 'surahs' | 'actions' | 'journal' | 'settings';
 
-function TadabburShell() {
-  const [activeTab, setActiveTab] = useState<Tab>('library');
+function TadabburAppShell() {
+  const [activeTab, setActiveTab] = useState<Tab>('home');
   const [selectedSurahId, setSelectedSurahId] = useState<number | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
 
-  const navigateToLibrary = () => {
-    setActiveTab('library');
+  const [isNavExpanded, setIsNavExpanded] = useState<boolean>(true);
+
+  useEffect(() => {
+    let mounted = true;
+    db.getSetting<boolean>('onboarding_completed').then((completed) => {
+      if (mounted) {
+        setShowOnboarding(completed === true ? false : true);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const navigateToTab = (tab: Tab) => {
+    setActiveTab(tab);
     setSelectedSurahId(null);
   };
 
-  return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-stone-200 bg-white/80 backdrop-blur sticky top-0 z-20 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-3 rtl:space-x-reverse">
-          <button
-            onClick={navigateToLibrary}
-            className="text-xl font-bold tracking-tight text-amber-900 hover:text-amber-950 transition-colors"
-          >
-            {i18n.t('common', 'appName')}
-          </button>
-          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium">
-            MVP Stage A-E
-          </span>
-        </div>
-        <nav className="flex items-center space-x-4 text-sm text-stone-600 rtl:space-x-reverse">
-          <button
-            onClick={navigateToLibrary}
-            className={`font-medium transition-colors ${
-              activeTab === 'library' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
-            }`}
-          >
-            {i18n.t('common', 'library')}
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('today');
-              setSelectedSurahId(null);
-            }}
-            className={`font-medium transition-colors ${
-              activeTab === 'today' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
-            }`}
-          >
-            {i18n.t('common', 'today')}
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('journal');
-              setSelectedSurahId(null);
-            }}
-            className={`font-medium transition-colors ${
-              activeTab === 'journal' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
-            }`}
-          >
-            {i18n.t('common', 'journal')}
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('account');
-              setSelectedSurahId(null);
-            }}
-            className={`font-medium transition-colors ${
-              activeTab === 'account' ? 'text-stone-900 underline underline-offset-4' : 'hover:text-stone-900'
-            }`}
-          >
-            Account
-          </button>
-        </nav>
-      </header>
+  const handleSelectSurah = (id: number) => {
+    setSelectedSurahId(id);
+    setActiveTab('surahs');
+  };
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6">
-        {activeTab === 'today' ? (
-          <TodayScreen onBrowseSurahs={navigateToLibrary} />
-        ) : activeTab === 'journal' ? (
-          <JournalListScreen onBrowseSurahs={navigateToLibrary} />
-        ) : activeTab === 'account' ? (
-          <AccountScreen />
-        ) : selectedSurahId === null ? (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
-              <h1 className="text-xl font-serif font-bold text-stone-900 mb-1">
-                Mushaf Reader
-              </h1>
-              <p className="text-xs text-stone-600">
-                Read Quranic Surahs in thematic blocks, write encrypted reflections, and take micro-actions.
-              </p>
-            </div>
-            <SurahList onSelectSurah={(id) => setSelectedSurahId(id)} />
+  if (showOnboarding === null) {
+    // Initial loading state while checking IndexedDB
+    return (
+      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="mark ar text-2xl w-10 h-10 rounded-lg">ت</div>
+          <span className="serif text-xl font-bold text-[var(--ink)]">Tadabbur</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
+  }
+
+  const navItems: { tab: Tab; label: string; icon: string }[] = [
+    { tab: 'home', label: 'Home', icon: '🏠' },
+    { tab: 'surahs', label: 'Surahs', icon: '📖' },
+    { tab: 'actions', label: 'Actions', icon: '✅' },
+    { tab: 'journal', label: 'Journal', icon: '✍️' },
+    { tab: 'settings', label: 'Settings', icon: '⚙️' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[var(--bg)] flex flex-col md:flex-row">
+      {/* Sidebar Navigation (tablet & desktop) */}
+      <aside className={`hidden md:flex side sticky top-0 h-screen flex-col py-6 transition-all duration-300 border-r border-[var(--line)] bg-[var(--surf)] ${isNavExpanded ? 'w-64 px-4' : 'w-20 items-center px-0 rail'}`}>
+        <div className={`flex items-center w-full ${isNavExpanded ? 'justify-between mb-6 px-2' : 'flex-col justify-center gap-4 mb-6'}`}>
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => navigateToTab('home')}
+          >
+            <div className="mark ar text-xl w-9 h-9 rounded-lg flex items-center justify-center">ت</div>
+            {isNavExpanded && <b className="serif text-xl text-[var(--ink)]">Tadabbur</b>}
+          </div>
+          <button 
+            onClick={() => setIsNavExpanded(!isNavExpanded)}
+            className="text-[var(--mut)] hover:text-[var(--pri)] p-1 rounded-md"
+            title={isNavExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+          >
+            {isNavExpanded ? '◀' : '▶'}
+          </button>
+        </div>
+
+        <nav className={`flex flex-col gap-1 w-full ${!isNavExpanded && 'px-1 gap-2'}`}>
+          {navItems.map((item) => (
+            <button
+              key={item.tab}
+              onClick={() => navigateToTab(item.tab)}
+              className={`n ${activeTab === item.tab && selectedSurahId === null ? 'on' : ''}`}
+              title={!isNavExpanded ? item.label : undefined}
+            >
+              <span className="text-base">{item.icon}</span>
+              {isNavExpanded ? <span>{item.label}</span> : <span className={!isNavExpanded ? 'text-[0.6rem] mt-1' : ''}>{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        {isNavExpanded ? (
+          <div className="mt-auto pt-4 border-t border-[var(--line)] px-2">
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="text-xs text-[var(--mut)] hover:text-[var(--pri)] transition-colors flex items-center gap-1.5"
+            >
+              <span>🔄</span> View Onboarding Guide
+            </button>
           </div>
         ) : (
-          <ReaderScreen
-            surahId={selectedSurahId}
-            onBack={() => setSelectedSurahId(null)}
-          />
+          <div className="mt-auto pt-4 border-t border-[var(--line)] w-full flex justify-center">
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="text-lg text-[var(--mut)] hover:text-[var(--pri)] transition-colors p-2"
+              title="View Onboarding Guide"
+            >
+              🔄
+            </button>
+          </div>
         )}
-      </main>
+      </aside>
 
-      {/* Analytics Consent Banner */}
-      <AnalyticsConsentBanner />
+      {/* Main App Workspace */}
+      <div className="flex-1 flex flex-col min-h-screen pb-20 md:pb-6">
+        {/* Mobile Header (visible only on small screens < md) */}
+        <header className="flex md:hidden border-b border-[var(--line)] bg-[var(--surf)] px-4 py-3 items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-2" onClick={() => navigateToTab('home')}>
+            <div className="mark ar text-sm w-7 h-7 rounded flex items-center justify-center">ت</div>
+            <span className="serif text-lg font-bold text-[var(--ink)]">Tadabbur</span>
+          </div>
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="text-xs text-[var(--pri)] font-medium"
+          >
+            Onboarding
+          </button>
+        </header>
 
-      {/* Footer */}
-      <footer className="border-t border-stone-200 py-4 text-center text-xs text-stone-500">
-        Tadabbur MVP &bull; Offline PWA Shell &bull; End-to-End Encryption First
-      </footer>
+        {/* Content Body */}
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+          {activeTab === 'home' && selectedSurahId === null ? (
+            <HomeScreen
+              onSelectSurah={handleSelectSurah}
+              onOpenActions={() => navigateToTab('actions')}
+              onOpenJournal={() => navigateToTab('journal')}
+            />
+          ) : activeTab === 'actions' ? (
+            <TodayScreen onBrowseSurahs={() => navigateToTab('surahs')} />
+          ) : activeTab === 'journal' ? (
+            <JournalListScreen onBrowseSurahs={() => navigateToTab('surahs')} />
+          ) : activeTab === 'settings' ? (
+            <div className="space-y-6">
+              <AccountScreen />
+              <div className="card p-4 flex items-center justify-between">
+                <div>
+                  <b className="block text-sm">Onboarding Setup</b>
+                  <span className="text-xs mut">Re-run the initial 4-step onboarding flow</span>
+                </div>
+                <button className="btn" onClick={() => setShowOnboarding(true)}>
+                  Start Onboarding
+                </button>
+              </div>
+            </div>
+          ) : selectedSurahId === null ? (
+            <div className="space-y-6">
+              <div className="card p-6">
+                <h1 className="text-xl font-serif font-bold text-[var(--ink)] mb-1">
+                  Mushaf Reader
+                </h1>
+                <p className="text-xs mut">
+                  Read Quranic Surahs in thematic blocks, write encrypted reflections, and take micro-actions.
+                </p>
+              </div>
+              <SurahList onSelectSurah={(id) => setSelectedSurahId(id)} />
+            </div>
+          ) : (
+            <ReaderScreen
+              surahId={selectedSurahId}
+              onBack={() => setSelectedSurahId(null)}
+            />
+          )}
+        </main>
+
+        <AnalyticsConsentBanner />
+      </div>
+
+      {/* Mobile Bottom Tabbar Navigation (visible only on small screens < md) */}
+      <nav className="flex sm:hidden tabbar fixed bottom-0 left-0 right-0 z-30 shadow-lg">
+        {navItems.map((item) => (
+          <button
+            key={item.tab}
+            onClick={() => navigateToTab(item.tab)}
+            className={activeTab === item.tab && selectedSurahId === null ? 'on' : ''}
+          >
+            <span className="block text-lg mb-0.5">{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -121,7 +206,7 @@ function TadabburShell() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <TadabburShell />
+      <TadabburAppShell />
     </ErrorBoundary>
   );
 }
