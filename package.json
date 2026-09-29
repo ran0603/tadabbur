@@ -1,23 +1,33 @@
 {
-  "name": "tadabbur-monorepo",
-  "version": "0.1.0",
+  "name": "antigravity-quran-tadabbur",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "tools/*",
-    "services/*"
-  ],
   "scripts": {
-    "dev": "npm run dev --workspace=@tadabbur/web",
-    "dev:cms": "npm run dev --workspace=@tadabbur/cms",
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "perf-check": "node tools/perf-check.js"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dexie": "^4.0.10",
+    "dexie-react-hooks": "^1.1.7",
+    "framer-motion": "^12.4.10",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@tailwindcss/vite": "^4.0.7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.7",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.1",
+    "vite-plugin-pwa": "^0.21.1"
   }
 }

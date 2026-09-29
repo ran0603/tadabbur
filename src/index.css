@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-cream: #FDFBF7;
+    --bg-card-cream: #FFFFFF;
+    --text-primary: #334155;
+  }
+
+  .dark {
+    --bg-cream: #121212;
+    --bg-card-cream: #1E1E1E;
+    --text-primary: #F1F5F9;
+  }
+}
+
+/* Custom Typography Helpers */
+.font-quran {
+  font-family: 'Amiri Quran', 'Amiri', serif;
+}
+
+.font-amiri {
+  font-family: 'Amiri', serif;
+}
+
+.font-cairo {
+  font-family: 'Cairo', sans-serif;
+}
+
+.font-ibm {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+}
+
+.font-tajawal {
+  font-family: 'Tajawal', sans-serif;
+}
+
+/* Font Size Modifiers */
+.font-scale-sm {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.font-scale-md {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.font-scale-lg {
+  font-size: 1.2rem;
+  line-height: 1.85;
+}
+
+.font-scale-xl {
+  font-size: 1.35rem;
+  line-height: 2;
+}
+
+/* Custom Quranic Verses Bracket styling */
+.aya-bracket {
+  color: #ea580c;
+  font-family: 'Amiri Quran', 'Amiri', serif;
+  font-weight: bold;
+}
+
+/* Smooth transitions */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
