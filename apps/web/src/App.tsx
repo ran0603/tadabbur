@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ErrorBoundary } from './core/errors/ErrorBoundary';
 import { db } from './core/db';
 import { AnalyticsConsentBanner } from './core/analytics/AnalyticsConsentBanner';
-import { HomeScreen } from './features/home/HomeScreen';
+import { HomeScreen, UserState } from './features/home/HomeScreen';
 import { OnboardingFlow } from './features/onboarding/OnboardingFlow';
 import { SurahList } from './features/reader/SurahList';
 import { ReaderScreen } from './features/reader/ReaderScreen';
@@ -16,7 +16,7 @@ function TadabburAppShell() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [selectedSurahId, setSelectedSurahId] = useState<number | null>(null);
   const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
-
+  const [userState, setUserState] = useState<UserState>('ret');
   const [isNavExpanded, setIsNavExpanded] = useState<boolean>(true);
 
   useEffect(() => {
@@ -42,7 +42,6 @@ function TadabburAppShell() {
   };
 
   if (showOnboarding === null) {
-    // Initial loading state while checking IndexedDB
     return (
       <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center">
         <div className="flex items-center gap-3">
@@ -57,10 +56,10 @@ function TadabburAppShell() {
     return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
   }
 
-  const navItems: { tab: Tab; label: string; icon: string }[] = [
+  const navItems: { tab: Tab; label: string; icon: string; badge?: string }[] = [
     { tab: 'home', label: 'Home', icon: '🏠' },
     { tab: 'surahs', label: 'Surahs', icon: '📖' },
-    { tab: 'actions', label: 'Actions', icon: '✅' },
+    { tab: 'actions', label: 'Actions', icon: '✅', badge: userState === 'due' ? '2' : undefined },
     { tab: 'journal', label: 'Journal', icon: '✍️' },
     { tab: 'settings', label: 'Settings', icon: '⚙️' },
   ];
@@ -95,7 +94,17 @@ function TadabburAppShell() {
               title={!isNavExpanded ? item.label : undefined}
             >
               <span className="text-base">{item.icon}</span>
-              {isNavExpanded ? <span>{item.label}</span> : <span className={!isNavExpanded ? 'text-[0.6rem] mt-1' : ''}>{item.label}</span>}
+              {isNavExpanded ? (
+                <>
+                  <span>{item.label}</span>
+                  {item.badge && <em>{item.badge}</em>}
+                </>
+              ) : (
+                <span className="text-[0.6rem] mt-1 relative">
+                  {item.label}
+                  {item.badge && <span className="absolute -top-3 -right-2 bg-[var(--gold)] text-[#12302F] font-bold rounded-full w-4 h-4 flex items-center justify-center text-[9px]">{item.badge}</span>}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -124,7 +133,7 @@ function TadabburAppShell() {
 
       {/* Main App Workspace */}
       <div className="flex-1 flex flex-col min-h-screen pb-20 md:pb-6">
-        {/* Mobile Header (visible only on small screens < md) */}
+        {/* Mobile Header */}
         <header className="flex md:hidden border-b border-[var(--line)] bg-[var(--surf)] px-4 py-3 items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2" onClick={() => navigateToTab('home')}>
             <div className="mark ar text-sm w-7 h-7 rounded flex items-center justify-center">ت</div>
@@ -145,6 +154,7 @@ function TadabburAppShell() {
               onSelectSurah={handleSelectSurah}
               onOpenActions={() => navigateToTab('actions')}
               onOpenJournal={() => navigateToTab('journal')}
+              onStateChange={(st) => setUserState(st)}
             />
           ) : activeTab === 'actions' ? (
             <TodayScreen onBrowseSurahs={() => navigateToTab('surahs')} />
@@ -186,15 +196,18 @@ function TadabburAppShell() {
         <AnalyticsConsentBanner />
       </div>
 
-      {/* Mobile Bottom Tabbar Navigation (visible only on small screens < md) */}
-      <nav className="flex sm:hidden tabbar fixed bottom-0 left-0 right-0 z-30 shadow-lg">
+      {/* Mobile Bottom Tabbar Navigation */}
+      <nav className="flex md:hidden tabbar fixed bottom-0 left-0 right-0 z-30 shadow-lg">
         {navItems.map((item) => (
           <button
             key={item.tab}
             onClick={() => navigateToTab(item.tab)}
             className={activeTab === item.tab && selectedSurahId === null ? 'on' : ''}
           >
-            <span className="block text-lg mb-0.5">{item.icon}</span>
+            <span className="block text-lg mb-0.5 relative">
+              {item.icon}
+              {item.badge && <span className="absolute -top-1 -right-2 bg-[var(--gold)] text-[#12302F] text-[9px] font-bold rounded-full px-1">●</span>}
+            </span>
             {item.label}
           </button>
         ))}
